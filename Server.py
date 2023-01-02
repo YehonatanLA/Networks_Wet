@@ -1,5 +1,6 @@
 import queue
-from LoadBalancer import *
+import numpy as np
+import LoadBalancer
 
 
 class Server:
@@ -14,9 +15,11 @@ class Server:
         self.total_process_time = 0
         self.last_processed = 0
 
+    # def to enter
     def handle_packet(self, time_received, load_balancer):
         if self.queue.empty() and not self.is_working:
-            rate = random.exponential(scale=self.proc_rate)
+            self.total_waiting_time += LoadBalancer.Time() - time_received
+            rate = np.random.exponential(scale=self.proc_rate)
             self.total_process_time += rate
             self.is_working = True
             load_balancer.s.enter(rate, 1, self.switch_packet, argument=(load_balancer,))
@@ -27,14 +30,15 @@ class Server:
 
     def switch_packet(self, load_balancer: LoadBalancer):
         self.packets_processed += 1
-        self.last_processed = Time()
+        self.last_processed = LoadBalancer.Time()
         if not self.queue.empty():
             # TODO: if doesn't perform change to constant
-            rate = random.exponential(scale=self.proc_rate)
+            rate = np.random.exponential(scale=self.proc_rate)
             curPacketTime = self.queue.get()
-            self.total_waiting_time += Time() - curPacketTime
+            self.total_waiting_time += LoadBalancer.Time() - curPacketTime
             self.is_working = True
             self.total_process_time += rate
             load_balancer.s.enter(rate, 1, self.switch_packet, argument=(load_balancer,))
         else:
             self.is_working = False
+
